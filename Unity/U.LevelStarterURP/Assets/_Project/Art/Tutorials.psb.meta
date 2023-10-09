@@ -94,6 +94,27 @@ ScriptedImporter:
     spritePosition: {x: 0, y: 0}
   mosaicSpriteImportData: []
   rigSpriteImportData:
+  - name: land
+    originalName: 
+    pivot: {x: 0.5, y: 0.5}
+    alignment: 0
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 3852
+      y: 140
+      width: 112
+      height: 112
+    spriteID: 2bb8e52360c62a646b8ade12b5a6780a
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 3852, y: 140}
+    spritePosition: {x: 1728, y: 1024}
   - name: size
     originalName: 
     pivot: {x: 0.5, y: 0.5}
@@ -101,7 +122,7 @@ ScriptedImporter:
     border: {x: 0, y: 0, z: 0, w: 0}
     rect:
       serializedVersion: 2
-      x: 4
+      x: 3852
       y: 4
       width: 128
       height: 128
@@ -113,7 +134,7 @@ ScriptedImporter:
     indices: 
     edges: []
     tessellationDetail: 0
-    uvTransform: {x: 4, y: 4}
+    uvTransform: {x: 3852, y: 4}
     spritePosition: {x: 2010, y: 1016}
   - name: Step
     originalName: 
@@ -122,7 +143,7 @@ ScriptedImporter:
     border: {x: 0, y: 0, z: 0, w: 0}
     rect:
       serializedVersion: 2
-      x: 140
+      x: 3988
       y: 4
       width: 82
       height: 122
@@ -134,8 +155,29 @@ ScriptedImporter:
     indices: 
     edges: []
     tessellationDetail: 0
-    uvTransform: {x: 140, y: 4}
+    uvTransform: {x: 3988, y: 4}
     spritePosition: {x: 1877, y: 1018}
+  - name: Layer 1
+    originalName: 
+    pivot: {x: 0.5, y: 0.5}
+    alignment: 0
+    border: {x: 0, y: 0, z: 0, w: 0}
+    rect:
+      serializedVersion: 2
+      x: 4
+      y: 4
+      width: 3840
+      height: 2160
+    spriteID: 1578ebe90443fc248a61abec1b77b138
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 4, y: 4}
+    spritePosition: {x: 0, y: 0}
   characterData:
     bones: []
     parts: []
@@ -170,13 +212,23 @@ ScriptedImporter:
   resliceFromLayer: 0
   mosaicPSDLayers: []
   rigPSDLayers:
+  - name: land
+    spriteName: land
+    isGroup: 0
+    parentIndex: -1
+    spriteID: 2bb8e52360c62a646b8ade12b5a6780a
+    layerID: 13
+    mosaicPosition: {x: 3852, y: 140}
+    flatten: 0
+    isImported: 1
+    isVisible: 1
   - name: size
     spriteName: size
     isGroup: 0
     parentIndex: -1
     spriteID: 109abc0f8ac4d7748ac99d884c1a0244
     layerID: 11
-    mosaicPosition: {x: 4, y: 4}
+    mosaicPosition: {x: 3852, y: 4}
     flatten: 0
     isImported: 1
     isVisible: 1
@@ -186,7 +238,7 @@ ScriptedImporter:
     parentIndex: -1
     spriteID: d89fe7390a2c5ed40a7a480963ffbfd0
     layerID: 7
-    mosaicPosition: {x: 140, y: 4}
+    mosaicPosition: {x: 3988, y: 4}
     flatten: 0
     isImported: 1
     isVisible: 1
@@ -196,10 +248,10 @@ ScriptedImporter:
     parentIndex: -1
     spriteID: 1578ebe90443fc248a61abec1b77b138
     layerID: 6
-    mosaicPosition: {x: 4, y: 134}
+    mosaicPosition: {x: 4, y: 4}
     flatten: 0
-    isImported: 0
-    isVisible: 0
+    isImported: 1
+    isVisible: 1
   sharedRigPSDLayers: []
   pSDLayerImportSetting: []
   importFileNodeState: 1
