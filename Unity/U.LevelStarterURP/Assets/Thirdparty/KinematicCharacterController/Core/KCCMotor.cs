@@ -153,7 +153,7 @@ namespace KinematicCharacterController
     /// Component that manages character collisions and movement solving
     /// </summary>
     [RequireComponent(typeof(CapsuleCollider))]
-    public class KinematicCharacterMotor : MonoBehaviour
+    public class KCCMotor : MonoBehaviour
     {
 #pragma warning disable 0414
         [Header("Components")]
@@ -1639,7 +1639,7 @@ namespace KinematicCharacterController
         {
             if (_rigidbodyProjectionHitCount < _internalRigidbodyProjectionHits.Length)
             {
-                if (!hitRigidbody.GetComponent<KinematicCharacterMotor>())
+                if (!hitRigidbody.GetComponent<KCCMotor>())
                 {
                     RigidbodyProjectionHit rph = new RigidbodyProjectionHit();
                     rph.Rigidbody = hitRigidbody;
@@ -1851,7 +1851,7 @@ namespace KinematicCharacterController
                         float characterMass = SimulatedCharacterMass;
                         Vector3 characterVelocity = bodyHit.HitVelocity;
 
-                        KinematicCharacterMotor hitCharacterMotor = bodyHit.Rigidbody.GetComponent<KinematicCharacterMotor>();
+                        KCCMotor hitCharacterMotor = bodyHit.Rigidbody.GetComponent<KCCMotor>();
                         bool hitBodyIsCharacter = hitCharacterMotor != null;
                         bool hitBodyIsDynamic = !bodyHit.Rigidbody.isKinematic;
                         float hitBodyMass = bodyHit.Rigidbody.mass;

@@ -5,12 +5,12 @@ using UnityEditor;
 
 namespace KinematicCharacterController
 {
-    [CustomEditor(typeof(KinematicCharacterMotor))]
+    [CustomEditor(typeof(KCCMotor))]
     public class KinematicCharacterMotorEditor : Editor
     {
         protected virtual void OnSceneGUI()
         {            
-            KinematicCharacterMotor motor = (target as KinematicCharacterMotor);
+            KCCMotor motor = (target as KCCMotor);
             if (motor)
             {
                 Vector3 characterBottom = motor.transform.position + (motor.Capsule.center + (-Vector3.up * (motor.Capsule.height * 0.5f)));

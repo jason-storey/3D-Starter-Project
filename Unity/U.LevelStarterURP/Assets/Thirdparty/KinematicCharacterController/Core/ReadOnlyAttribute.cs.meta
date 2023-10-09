@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 63e8828991cf67f42bfeb498686aad0b
-timeCreated: 1504493014
-licenseType: Store
+labels:
+- KCC
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2

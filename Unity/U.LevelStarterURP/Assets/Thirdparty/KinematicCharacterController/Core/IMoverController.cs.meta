@@ -1,5 +1,8 @@
 fileFormatVersion: 2
 guid: 8ae7eceec45f1be4c8450edc46c0ad36
+labels:
+- Contract
+- KCC
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2

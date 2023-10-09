@@ -13,7 +13,7 @@ namespace KinematicCharacterController
     {
         private static KinematicCharacterSystem _instance;
 
-        public static List<KinematicCharacterMotor> CharacterMotors = new List<KinematicCharacterMotor>();
+        public static List<KCCMotor> CharacterMotors = new List<KCCMotor>();
         public static List<PhysicsMover> PhysicsMovers = new List<PhysicsMover>();
 
         private static float _lastCustomInterpolationStartTime = -1f;
@@ -65,7 +65,7 @@ namespace KinematicCharacterController
         /// <summary>
         /// Registers a KinematicCharacterMotor into the system
         /// </summary>
-        public static void RegisterCharacterMotor(KinematicCharacterMotor motor)
+        public static void RegisterCharacterMotor(KCCMotor motor)
         {
             CharacterMotors.Add(motor);
         }
@@ -73,7 +73,7 @@ namespace KinematicCharacterController
         /// <summary>
         /// Unregisters a KinematicCharacterMotor from the system
         /// </summary>
-        public static void UnregisterCharacterMotor(KinematicCharacterMotor motor)
+        public static void UnregisterCharacterMotor(KCCMotor motor)
         {
             CharacterMotors.Remove(motor);
         }
@@ -156,7 +156,7 @@ namespace KinematicCharacterController
             // Save pre-simulation poses and place transform at transient pose
             for (int i = 0; i < CharacterMotors.Count; i++)
             {
-                KinematicCharacterMotor motor = CharacterMotors[i];
+                KCCMotor motor = CharacterMotors[i];
 
                 motor.InitialTickPosition = motor.TransientPosition;
                 motor.InitialTickRotation = motor.TransientRotation;
@@ -180,7 +180,7 @@ namespace KinematicCharacterController
         /// <summary>
         /// Ticks characters and/or movers
         /// </summary>
-        public static void Simulate(float deltaTime, List<KinematicCharacterMotor> motors, List<PhysicsMover> movers)
+        public static void Simulate(float deltaTime, List<KCCMotor> motors, List<PhysicsMover> movers)
         {
             int characterMotorsCount = motors.Count;
             int physicsMoversCount = movers.Count;
@@ -211,7 +211,7 @@ namespace KinematicCharacterController
             // Character controller update phase 2 and move
             for (int i = 0; i < characterMotorsCount; i++)
             {
-                KinematicCharacterMotor motor = motors[i];
+                KCCMotor motor = motors[i];
 
                 motor.UpdatePhase2(deltaTime);
 
@@ -231,7 +231,7 @@ namespace KinematicCharacterController
             // Return interpolated roots to their initial poses
             for (int i = 0; i < CharacterMotors.Count; i++)
             {
-                KinematicCharacterMotor motor = CharacterMotors[i];
+                KCCMotor motor = CharacterMotors[i];
 
                 motor.Transform.SetPositionAndRotation(motor.InitialTickPosition, motor.InitialTickRotation);
             }
@@ -266,7 +266,7 @@ namespace KinematicCharacterController
             // Handle characters interpolation
             for (int i = 0; i < CharacterMotors.Count; i++)
             {
-                KinematicCharacterMotor motor = CharacterMotors[i];
+                KCCMotor motor = CharacterMotors[i];
 
                 motor.Transform.SetPositionAndRotation(
                     Vector3.Lerp(motor.InitialTickPosition, motor.TransientPosition, interpolationFactor),
