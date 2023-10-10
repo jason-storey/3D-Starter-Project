@@ -452,8 +452,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_NoiseProfile: {fileID: 11400000, guid: 46965f9cbaf525742a6da4c2172a99cd, type: 2}
   m_PivotOffset: {x: 0, y: 0, z: 0}
-  m_AmplitudeGain: 0.5
-  m_FrequencyGain: 0.75
+  m_AmplitudeGain: 0.375
+  m_FrequencyGain: 0.375
   mNoiseOffsets: {x: 0, y: 0, z: 0}
 --- !u!1001 &412475794729144498
 PrefabInstance:
