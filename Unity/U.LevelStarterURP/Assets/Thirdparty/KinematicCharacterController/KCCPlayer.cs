@@ -15,6 +15,7 @@ namespace JS
         
         void Start()
         {
+            _player.PlayerSystem = this;
             Cursor.lockState = CursorLockMode.Locked;
             _cam.SetFollowTransform(_character.CameraFollowPoint);
             _cam._ignoredColliders.Clear();

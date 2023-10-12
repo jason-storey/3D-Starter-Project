@@ -20,9 +20,12 @@ public class Inputs : MonoBehaviour
     void OnEnable()
     {
         _input.onActionTriggered += ActionWasTriggered;
+        _data.Inputs = this;
         SetInitialInputMap();
         _instance = this;
     }
+
+    public PlayerInput InputHandler => _input;
 
     void SetInitialInputMap()
     {
@@ -111,5 +114,11 @@ public class Inputs : MonoBehaviour
             ToggleCameraZoom = p["CameraZoom"].triggered,
             CameraScroll = p["CameraScroll"].ReadValue<float>()
         });
+    }
+
+    public bool Pressed(string action)
+    {
+        var a = _input.actions[action];
+        return a.triggered;
     }
 }

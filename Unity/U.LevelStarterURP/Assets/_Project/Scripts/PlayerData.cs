@@ -8,6 +8,12 @@ public class PlayerData : ScriptableObject
     [SerializeField] Transform _lookingAt;
     [SerializeField] bool _isFirstPerson;
 
+    [SerializeField]
+    public Inputs Inputs;
+    
+    [SerializeField]
+    string _LookAtTarget;
+    
     public bool IsFirstPerson
     {
         get => _isFirstPerson;
@@ -25,6 +31,7 @@ public class PlayerData : ScriptableObject
         get => _lookingAt;
         set
         {
+            _LookAtTarget = value?.name;
             _lookingAt = value;
             LookingAtChanged?.Invoke(_lookingAt);
         }
@@ -32,6 +39,20 @@ public class PlayerData : ScriptableObject
 
     public event Action ChangedCameraMode; 
     public bool IsLookingAtSomething => _lookingAt;
+    public KCCPlayer PlayerSystem { get; set; }
+    [SerializeField]
+    bool AllowRaycasting = true;
+
+    public bool IsRaycastingAllowed => AllowRaycasting;
+    
+    public void SetRaycastingAllowed(bool allowed)
+    {
+        AllowRaycasting = allowed;
+        RaycastAllowedChanged?.Invoke(allowed);
+    }
+
+    public event Action<bool> RaycastAllowedChanged; 
+    
     public event Action<Transform> LookingAtChanged;
 
     public void LockMouse()
