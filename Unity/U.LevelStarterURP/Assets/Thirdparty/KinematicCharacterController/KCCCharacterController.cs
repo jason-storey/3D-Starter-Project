@@ -32,13 +32,25 @@ namespace JS
         public float JumpUpSpeed = 10f;
         public float JumpScalableForwardSpeed = 10f;
         public float JumpPreGroundingGraceTime = 0f;
-        public float JumpPostGroundingGraceTime = 0f;
+        public int JumpCount = 0;
 
+        int ConsumedJumps = 0;
+        
+        [Header("Dashing")]
+        public int DashCount = 0;
+        public float DashSpeed = 10f;
+        public float DashDuration = 0.1f;
+        public float DashCooldown = 0.5f;
+        public float DashPreGroundingGraceTime = 0f;
+        public float DashPreAirGraceTime = 0f;
+        float DashesConsumed = 0;
+        
+        
         [Header("Misc")]
-        public List<Collider> IgnoredColliders = new List<Collider>();
+        public List<Collider> IgnoredColliders = new();
         public BonusOrientationMethod BonusOrientationMethod = BonusOrientationMethod.None;
         public float BonusOrientationSharpness = 10f;
-        public Vector3 Gravity = new Vector3(0, -30f, 0);
+        public Vector3 Gravity = new(0, -30f, 0);
         public Transform MeshRoot;
         public Transform CameraFollowPoint;
         public float CrouchedCapsuleHeight = 1f;
@@ -52,92 +64,88 @@ namespace JS
         bool _jumpConsumed;
         bool _jumpedThisFrame;
         float _timeSinceJumpRequested = Mathf.Infinity;
-        float _timeSinceLastAbleToJump;
         Vector3 _internalVelocityAdd = Vector3.zero;
         bool _shouldBeCrouching;
         bool _isCrouching;
 
         #endregion
 
+        #region Handle_Input
+
         void HandleDefaultInputs(CharacterInputs inputs, Quaternion cameraPlanarRotation, Vector3 moveInputVector,
             Vector3 cameraPlanarDirection)
         {
-            // Move and look inputs
             _moveInputVector = cameraPlanarRotation * moveInputVector;
-
-            switch (OrientationMethod)
-            {
-                case OrientationMethod.TowardsCamera:
-                    _lookInputVector = cameraPlanarDirection;
-                    break;
-                case OrientationMethod.TowardsMovement:
-                    _lookInputVector = _moveInputVector.normalized;
-                    break;
-            }
-
-            // Jumping input
-            if (inputs.JumpDown)
-            {
-                _timeSinceJumpRequested = 0f;
-                _jumpRequested = true;
-            }
-
-            // Crouching input
-            if (inputs.CrouchDown && _data.IsFirstPerson)
-            {
-                _shouldBeCrouching = true;
-
-                if (!_isCrouching)
-                {
-                    _isCrouching = true;
-                    Motor.SetCapsuleDimensions(0.5f, CrouchedCapsuleHeight, CrouchedCapsuleHeight * 0.5f);
-                    MeshRoot.localScale = new Vector3(1f, 0.5f, 1f);
-                }
-            }
+            UpdateOrientationToCamera(cameraPlanarDirection);
+            
+            if (inputs.JumpDown) Init_Jump();
+            if (inputs.DashDown) Init_Dash();
+            if (inputs.CrouchDown && _data.IsFirstPerson) Init_Crouch();
             else if (inputs.CrouchUp) _shouldBeCrouching = false;
         }
+
+        void UpdateOrientationToCamera(Vector3 cameraPlanarDirection) =>
+            _lookInputVector = OrientationMethod switch
+            {
+                OrientationMethod.TowardsCamera => cameraPlanarDirection,
+                OrientationMethod.TowardsMovement => _moveInputVector.normalized,
+                _ => _lookInputVector
+            };
+
+        void Init_Jump()
+        {
+            _timeSinceJumpRequested = 0f;
+            _jumpRequested = true;
+        }
+
+        void Init_Dash()
+        {
+            _timeSinceDashRequested = 0f;
+            _dashRequested = true;
+        }
+
+        void Init_Crouch()
+        {
+            _shouldBeCrouching = true;
+
+            if (_isCrouching) return;
+            _isCrouching = true;
+            Motor.SetCapsuleDimensions(0.5f, CrouchedCapsuleHeight, CrouchedCapsuleHeight * 0.5f);
+            MeshRoot.localScale = new Vector3(1f, 0.5f, 1f);
+        }
+
+        
+
+        #endregion
+        
+        #region Handle_Rotation
+
 
         void UpdateDefaultStateRotation(ref Quaternion currentRotation, float deltaTime)
         {
             if (_lookInputVector.sqrMagnitude > 0f && OrientationSharpness > 0f)
-            {
-                // Smoothly interpolate from current to target look direction
-                Vector3 smoothedLookInputDirection = Vector3.Slerp(Motor.CharacterForward, _lookInputVector,
-                    1 - Mathf.Exp(-OrientationSharpness * deltaTime)).normalized;
+                SmoothInterpolateLookDirection(out currentRotation, deltaTime);
+            HandleRotationBasedOnGravity(ref currentRotation, deltaTime);
+        }
 
-                // Set the current rotation (which will be used by the KinematicCharacterMotor)
-                currentRotation = Quaternion.LookRotation(smoothedLookInputDirection, Motor.CharacterUp);
-            }
-
+        void HandleRotationBasedOnGravity(ref Quaternion currentRotation, float deltaTime)
+        {
             Vector3 currentUp = (currentRotation * Vector3.up);
             switch (BonusOrientationMethod)
             {
                 case BonusOrientationMethod.TowardsGravity:
                 {
-                    // Rotate from current up to invert gravity
-                    Vector3 smoothedGravityDir = Vector3.Slerp(currentUp, -Gravity.normalized,
-                        1 - Mathf.Exp(-BonusOrientationSharpness * deltaTime));
-                    currentRotation = Quaternion.FromToRotation(currentUp, smoothedGravityDir) * currentRotation;
+                    RotateToInvertedGravity(ref currentRotation, deltaTime, currentUp);
                     break;
                 }
                 case BonusOrientationMethod.TowardsGroundSlopeAndGravity when Motor.GroundingStatus.IsStableOnGround:
                 {
-                    Vector3 initialCharacterBottomHemiCenter = Motor.TransientPosition + (currentUp * Motor.Capsule.radius);
-
-                    Vector3 smoothedGroundNormal = Vector3.Slerp(Motor.CharacterUp, Motor.GroundingStatus.GroundNormal,
-                        1 - Mathf.Exp(-BonusOrientationSharpness * deltaTime));
-                    currentRotation = Quaternion.FromToRotation(currentUp, smoothedGroundNormal) * currentRotation;
-
-                    // Move the position to create a rotation around the bottom hemi center instead of around the pivot
-                    Motor.SetTransientPosition(initialCharacterBottomHemiCenter +
-                                               (currentRotation * Vector3.down * Motor.Capsule.radius));
+                    RotateTowardsGroundAndGravityWhenGrounded(ref currentRotation, deltaTime, currentUp);
                     break;
                 }
                 case BonusOrientationMethod.TowardsGroundSlopeAndGravity:
                 {
-                    Vector3 smoothedGravityDir = Vector3.Slerp(currentUp, -Gravity.normalized,
-                        1 - Mathf.Exp(-BonusOrientationSharpness * deltaTime));
-                    currentRotation = Quaternion.FromToRotation(currentUp, smoothedGravityDir) * currentRotation;
+                    RotateTowardsGroundAndGravity(ref currentRotation, deltaTime, currentUp);
                     break;
                 }
                 default:
@@ -150,6 +158,43 @@ namespace JS
             }
         }
 
+        void RotateTowardsGroundAndGravity(ref Quaternion currentRotation, float deltaTime, Vector3 currentUp)
+        {
+            Vector3 smoothedGravityDir = Vector3.Slerp(currentUp, -Gravity.normalized,
+                1 - Mathf.Exp(-BonusOrientationSharpness * deltaTime));
+            currentRotation = Quaternion.FromToRotation(currentUp, smoothedGravityDir) * currentRotation;
+        }
+
+        void RotateTowardsGroundAndGravityWhenGrounded(ref Quaternion currentRotation, float deltaTime, Vector3 currentUp)
+        {
+            Vector3 initialCharacterBottomHemiCenter = Motor.TransientPosition + (currentUp * Motor.Capsule.radius);
+
+            Vector3 smoothedGroundNormal = Vector3.Slerp(Motor.CharacterUp, Motor.GroundingStatus.GroundNormal,
+                1 - Mathf.Exp(-BonusOrientationSharpness * deltaTime));
+            currentRotation = Quaternion.FromToRotation(currentUp, smoothedGroundNormal) * currentRotation;
+
+            // Move the position to create a rotation around the bottom hemi center instead of around the pivot
+            Motor.SetTransientPosition(initialCharacterBottomHemiCenter +
+                                       (currentRotation * Vector3.down * Motor.Capsule.radius));
+        }
+
+        void RotateToInvertedGravity(ref Quaternion currentRotation, float deltaTime, Vector3 currentUp)
+        {
+            Vector3 smoothedGravityDir = Vector3.Slerp(currentUp, -Gravity.normalized,
+                1 - Mathf.Exp(-BonusOrientationSharpness * deltaTime));
+            currentRotation = Quaternion.FromToRotation(currentUp, smoothedGravityDir) * currentRotation;
+        }
+
+        void SmoothInterpolateLookDirection(out Quaternion currentRotation, float deltaTime)
+        {
+            Vector3 smoothedLookInputDirection = Vector3.Slerp(Motor.CharacterForward, _lookInputVector,
+                1 - Mathf.Exp(-OrientationSharpness * deltaTime)).normalized;
+            currentRotation = Quaternion.LookRotation(smoothedLookInputDirection, Motor.CharacterUp);
+        }
+
+        #endregion
+
+        
         void UpdateDefaultState(ref Vector3 currentVelocity, float deltaTime)
         {
             if (Motor.GroundingStatus.IsStableOnGround)
@@ -171,22 +216,10 @@ namespace JS
         void HandleDefaultJump(float deltaTime)
         {
             if (_jumpRequested && _timeSinceJumpRequested > JumpPreGroundingGraceTime) _jumpRequested = false;
-
-            if (AllowJumpingWhenSliding ? Motor.GroundingStatus.FoundAnyGround : Motor.GroundingStatus.IsStableOnGround)
-            {
-                // If we're on a ground surface, reset jumping values
-                if (!_jumpedThisFrame)
-                {
-                    _jumpConsumed = false;
-                }
-
-                _timeSinceLastAbleToJump = 0f;
-            }
-            else
-            {
-                // Keep track of time since we were last able to jump (for grace period)
-                _timeSinceLastAbleToJump += deltaTime;
-            }
+            if (AllowJumpingWhenSliding
+                    ? !Motor.GroundingStatus.FoundAnyGround
+                    : !Motor.GroundingStatus.IsStableOnGround) return;
+            if (!_jumpedThisFrame) ConsumedJumps = 0;
         }
 
         #region plumbing
@@ -259,16 +292,9 @@ namespace JS
             }
         }
 
-        /// <summary>
-        /// This is called every frame by the AI script in order to tell the character what its inputs are
-        /// </summary>
-        public void SetInputs(ref AICharacterInputs inputs)
-        {
-            _moveInputVector = inputs.MoveVector;
-            _lookInputVector = inputs.LookVector;
-        }
-
-        private Quaternion _tmpTransientRot;
+        Quaternion _tmpTransientRot;
+        bool _dashRequested;
+        float _timeSinceDashRequested;
 
         /// <summary>
         /// (Called by KinematicCharacterMotor during its update cycle)
@@ -327,34 +353,34 @@ namespace JS
         {
             _jumpedThisFrame = false;
             _timeSinceJumpRequested += deltaTime;
-            if (_jumpRequested)
-            {
-                // See if we actually are allowed to jump
-                if (!_jumpConsumed &&
-                    ((AllowJumpingWhenSliding
-                        ? Motor.GroundingStatus.FoundAnyGround
-                        : Motor.GroundingStatus.IsStableOnGround) || _timeSinceLastAbleToJump <= JumpPostGroundingGraceTime))
-                {
-                    // Calculate jump direction before ungrounding
-                    Vector3 jumpDirection = Motor.CharacterUp;
-                    if (Motor.GroundingStatus.FoundAnyGround && !Motor.GroundingStatus.IsStableOnGround)
-                    {
-                        jumpDirection = Motor.GroundingStatus.GroundNormal;
-                    }
-
-                    // Makes the character skip ground probing/snapping on its next update. 
-                    // If this line weren't here, the character would remain snapped to the ground when trying to jump. Try commenting this line out and see.
-                    Motor.ForceUnground();
-
-                    // Add to the return velocity and reset jump state
-                    currentVelocity += (jumpDirection * JumpUpSpeed) - Vector3.Project(currentVelocity, Motor.CharacterUp);
-                    currentVelocity += (_moveInputVector * JumpScalableForwardSpeed);
-                    _jumpRequested = false;
-                    _jumpConsumed = true;
-                    _jumpedThisFrame = true;
-                }
-            }
+            if (!_jumpRequested) return;
+            if (!IsAllowedToJump()) return;
+            ActualPerformJump(ref currentVelocity);
         }
+
+        void ActualPerformJump(ref Vector3 currentVelocity)
+        {
+            // Calculate jump direction before ungrounding
+            Vector3 jumpDirection = Motor.CharacterUp;
+            if (Motor.GroundingStatus.FoundAnyGround && !Motor.GroundingStatus.IsStableOnGround)
+            {
+                jumpDirection = Motor.GroundingStatus.GroundNormal;
+            }
+
+            // Makes the character skip ground probing/snapping on its next update. 
+            // If this line weren't here, the character would remain snapped to the ground when trying to jump. Try commenting this line out and see.
+            Motor.ForceUnground();
+
+            // Add to the return velocity and reset jump state
+            currentVelocity += (jumpDirection * JumpUpSpeed) - Vector3.Project(currentVelocity, Motor.CharacterUp);
+            currentVelocity += (_moveInputVector * JumpScalableForwardSpeed);
+            _jumpRequested = false;
+            ConsumedJumps++;
+            _jumpConsumed = true;
+            _jumpedThisFrame = true;
+        }
+
+        bool IsAllowedToJump() => ConsumedJumps < JumpCount;
 
         void HandleAirMovement(ref Vector3 currentVelocity, float deltaTime)
         {
@@ -567,13 +593,9 @@ namespace JS
         public bool CrouchUp;
         public float CameraScroll;
         public bool ToggleCameraZoom;
+        public bool DashDown;
     }
-
-    public struct AICharacterInputs
-    {
-        public Vector3 MoveVector;
-        public Vector3 LookVector;
-    }
+    
 
     public enum BonusOrientationMethod
     {

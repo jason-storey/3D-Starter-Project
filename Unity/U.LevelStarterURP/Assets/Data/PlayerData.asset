@@ -13,7 +13,10 @@ MonoBehaviour:
   m_Name: PlayerData
   m_EditorClassIdentifier: 
   _lookingAt: {fileID: 0}
-  _isFirstPerson: 0
+  _isFirstPerson: 1
+  Inputs: {fileID: 0}
+  _LookAtTarget: 
+  AllowRaycasting: 0
   _inputs:
     Move: {x: 0, y: 0}
     Look: {x: 0, y: 0}
@@ -23,3 +26,4 @@ MonoBehaviour:
     CrouchUp: 0
     CameraScroll: 0
     ToggleCameraZoom: 0
+    DashDown: 0

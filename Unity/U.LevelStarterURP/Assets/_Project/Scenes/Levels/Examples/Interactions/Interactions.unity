@@ -861,6 +861,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _selector: {fileID: 950746946}
   _showLogs: 0
+  _allowRaycasting: 0
   _allowLookingAround: 1
 --- !u!43 &602774115
 Mesh:
@@ -5096,6 +5097,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalRotation.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7878662643814624781, guid: ac9d53e29e4d79d40845f3afe045f115,
+        type: 3}
+      propertyPath: JumpCount
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 7878662643814624781, guid: ac9d53e29e4d79d40845f3afe045f115,
         type: 3}
