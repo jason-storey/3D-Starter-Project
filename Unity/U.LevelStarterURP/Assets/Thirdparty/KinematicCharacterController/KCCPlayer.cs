@@ -20,31 +20,7 @@ namespace JS
             _cam._ignoredColliders.Clear();
             _cam._ignoredColliders.AddRange(_character.GetComponentsInChildren<Collider>());
         }
-
-
-        public void Teleport(Transform point)
-        {
-            var pos = point.position;
-            var rot = point.rotation;
-            Teleport(pos, rot);
-        }
         
-        public void Teleport(Vector3 position, Vector3 lookTarget)
-        {
-            _character.TeleportAndLookAt(position, lookTarget);
-            _cam.SetRotation(Quaternion.LookRotation(lookTarget - position));
-        }
-
-        public void Teleport(Vector3 position) => _character.TeleportTo(position);
-
-        public void Teleport(Vector3 position, Quaternion rotation)
-        {
-            _character.TeleportTo(position, rotation);
-            _cam.SetRotation(rotation);
-        }
-        
-
-
         void LateUpdate()
         {
             if (_cam._rotateWithPhysicsMover && _character.Motor.AttachedRigidbody != null)
@@ -81,6 +57,8 @@ namespace JS
         {
             _inputs = inputs;
             inputs.CameraRotation = _cam.Transform.rotation;
+            inputs.CameraPosition = _cam.Transform.position;
+            inputs.CameraForward = _cam.Transform.forward;
             _character.SetInputs(ref inputs);
         }
         CharacterInputs _inputs;

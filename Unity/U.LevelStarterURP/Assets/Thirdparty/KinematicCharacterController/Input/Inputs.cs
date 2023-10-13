@@ -106,6 +106,7 @@ public class Inputs : MonoBehaviour
             Look = p["Look"].ReadValue<Vector2>(),
             Move = p["Move"].ReadValue<Vector2>(),
             JumpDown = p["Jump"].triggered,
+            JumpHeld = p["Jump"].ReadValue<float>() > 0.5f,
             CrouchDown = p["Crouch"].WasPerformedThisFrame(),
             CrouchUp = p["Crouch"].WasReleasedThisFrame(),
             ToggleCameraZoom = p["CameraZoom"].triggered,
