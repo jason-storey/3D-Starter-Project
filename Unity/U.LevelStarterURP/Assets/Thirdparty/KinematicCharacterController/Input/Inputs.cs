@@ -110,7 +110,8 @@ public class Inputs : MonoBehaviour
             CrouchDown = p["Crouch"].WasPerformedThisFrame(),
             CrouchUp = p["Crouch"].WasReleasedThisFrame(),
             ToggleCameraZoom = p["CameraZoom"].triggered,
-            CameraScroll = p["CameraScroll"].ReadValue<float>()
+            CameraScroll = p["CameraScroll"].ReadValue<float>(),
+            GrindDown = p["Dash"].WasPerformedThisFrame(),
         });
     }
 }
