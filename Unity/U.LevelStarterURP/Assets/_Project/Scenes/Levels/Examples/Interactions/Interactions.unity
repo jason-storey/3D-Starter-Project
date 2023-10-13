@@ -5100,6 +5100,16 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7878662643814624781, guid: ac9d53e29e4d79d40845f3afe045f115,
         type: 3}
+      propertyPath: DashCount
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7878662643814624781, guid: ac9d53e29e4d79d40845f3afe045f115,
+        type: 3}
+      propertyPath: DashSpeed
+      value: 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 7878662643814624781, guid: ac9d53e29e4d79d40845f3afe045f115,
+        type: 3}
       propertyPath: JumpCount
       value: 3
       objectReference: {fileID: 0}

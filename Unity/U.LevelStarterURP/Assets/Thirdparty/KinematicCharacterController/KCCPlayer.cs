@@ -82,6 +82,8 @@ namespace JS
         {
             _inputs = inputs;
             inputs.CameraRotation = _cam.Transform.rotation;
+            inputs.CameraPosition = _cam.Transform.position;
+            inputs.CameraForward = _cam.Transform.forward;
             _character.SetInputs(ref inputs);
         }
         CharacterInputs _inputs;

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using KinematicCharacterController;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace JS
 {
@@ -21,7 +22,8 @@ namespace JS
         public float StableMovementSharpness = 15f;
         public float OrientationSharpness = 10f;
         public OrientationMethod OrientationMethod = OrientationMethod.TowardsCamera;
-
+        public float SprintSpeed = 10f;
+        
         [Header("Air Movement")]
         public float MaxAirMoveSpeed = 15f;
         public float AirAccelerationSpeed = 15f;
@@ -33,19 +35,24 @@ namespace JS
         public float JumpScalableForwardSpeed = 10f;
         public float JumpPreGroundingGraceTime = 0f;
         public int JumpCount = 0;
-
+        public bool AllowJumpingAirControl = true;
+        
         int ConsumedJumps = 0;
         
         [Header("Dashing")]
         public int DashCount = 0;
         public float DashSpeed = 10f;
-        public float DashDuration = 0.1f;
         public float DashCooldown = 0.5f;
-        public float DashPreGroundingGraceTime = 0f;
-        public float DashPreAirGraceTime = 0f;
-        float DashesConsumed = 0;
+        public float DashesConsumed = 0;
+        [SerializeField]
+        bool _applyVelocitySubtractionFromDash = true;
         
-        
+        public float GroundedDashSpeedMultiplier;
+        public float AirDashSpeedModifier;
+
+        public float GroundDashUpwardsModifier = 1f;
+        public float AirDashUpwardsModifier;
+
         [Header("Misc")]
         public List<Collider> IgnoredColliders = new();
         public BonusOrientationMethod BonusOrientationMethod = BonusOrientationMethod.None;
@@ -67,6 +74,8 @@ namespace JS
         Vector3 _internalVelocityAdd = Vector3.zero;
         bool _shouldBeCrouching;
         bool _isCrouching;
+        float _dashRechargingTime;
+
 
         #endregion
 
@@ -80,9 +89,17 @@ namespace JS
             
             if (inputs.JumpDown) Init_Jump();
             if (inputs.DashDown) Init_Dash();
-            if (inputs.CrouchDown && _data.IsFirstPerson) Init_Crouch();
-            else if (inputs.CrouchUp) _shouldBeCrouching = false;
+           _isSprinting = inputs.SprintDown;
+           _dropDown = inputs.DropDown; 
+           if (inputs.CrouchDown && _data.IsFirstPerson) Init_Crouch();
+            
+            if (inputs.CrouchUp) _shouldBeCrouching = false;
         }
+        bool _dropDown;
+
+        [SerializeField]
+        bool _isSprinting;
+
 
         void UpdateOrientationToCamera(Vector3 cameraPlanarDirection) =>
             _lookInputVector = OrientationMethod switch
@@ -100,7 +117,6 @@ namespace JS
 
         void Init_Dash()
         {
-            _timeSinceDashRequested = 0f;
             _dashRequested = true;
         }
 
@@ -114,12 +130,9 @@ namespace JS
             MeshRoot.localScale = new Vector3(1f, 0.5f, 1f);
         }
 
-        
-
         #endregion
-        
-        #region Handle_Rotation
 
+        #region Handle_Rotation
 
         void UpdateDefaultStateRotation(ref Quaternion currentRotation, float deltaTime)
         {
@@ -194,24 +207,92 @@ namespace JS
 
         #endregion
 
-        
+
         void UpdateDefaultState(ref Vector3 currentVelocity, float deltaTime)
         {
             if (Motor.GroundingStatus.IsStableOnGround)
                 HandleGrounded(ref currentVelocity, deltaTime);
             else
                 HandleAirMovement(ref currentVelocity, deltaTime);
-            
+
+            HandleDashing(ref currentVelocity, deltaTime);
             HandleJumping(ref currentVelocity, deltaTime);
             IncludeAdditiveVelocity(ref currentVelocity);
+
+            HandleDropDown(ref currentVelocity, deltaTime);
+
         }
 
+        void HandleDropDown(ref Vector3 currentVelocity, float deltaTime)
+        {
+            if (!_dropDown) return;
+            if(Motor.GroundingStatus.IsStableOnGround) return;
+            _dropDown = false;
+            var speed = currentVelocity.magnitude;
+            currentVelocity = Vector3.down * speed;
+        }
+
+        void HandleDashing(ref Vector3 currentVelocity, float deltaTime)
+        {
+            if (!_dashRequested)
+            {
+               NotDashing(deltaTime);
+               return;
+            }
+
+            PerformDash(ref currentVelocity);
+        }
+
+
+       public bool UseLookVectorForDashingInstead;
+
+        void PerformDash(ref Vector3 currentVelocity)
+        {
+            _dashRequested = false;
+            if (DashesConsumed >= DashCount) return;
+      
+            currentVelocity.y = 0;
+            var dashDirection = _moveInputVector;
+            if(dashDirection.magnitude < 0.1f) dashDirection = _cameraPlanarDirection;
+            if (UseLookVectorForDashingInstead) dashDirection = _cameraForwardDirection;
+            var existingVelocityInDashDirection = Vector3.Project(currentVelocity, dashDirection);
+            var grounded = Motor.GroundingStatus.IsStableOnGround;
+
+            float speed = 0;
+            Vector3 dir;
+
+            if (grounded)
+            {
+                speed = DashSpeed*GroundedDashSpeedMultiplier;
+                dir = dashDirection + (Vector3.up * GroundDashUpwardsModifier);
+            }
+            else
+            {
+                speed = DashSpeed * AirDashSpeedModifier;
+                dir = dashDirection + (Vector3.up * AirDashUpwardsModifier);
+            }
+
+            currentVelocity += dir.normalized * speed;
+            if(_applyVelocitySubtractionFromDash) currentVelocity -= existingVelocityInDashDirection;
+            DashesConsumed++;
+        }
+
+  
+        void NotDashing(float deltaTime)
+        {
+            _dashRechargingTime += deltaTime;
+            if (!(_dashRechargingTime > DashCooldown)) return;
+            _dashRechargingTime = 0;
+            DashesConsumed--;
+            if (DashesConsumed < 0) DashesConsumed = 0;
+        }
 
         void HandleDefaultUpdate(float deltaTime)
         {
             HandleDefaultJump(deltaTime);
             HandleCrouching();
         }
+
 
         void HandleDefaultJump(float deltaTime)
         {
@@ -252,6 +333,8 @@ namespace JS
             }
         }
 
+
+
         /// <summary>
         /// Event when exiting a state
         /// </summary>
@@ -266,6 +349,8 @@ namespace JS
             }
         }
 
+        Vector3 _cameraForwardDirection;
+        Vector3 _cameraPlanarDirection;
         /// <summary>
         /// This is called every frame by ExamplePlayer in order to tell the character what its inputs are
         /// </summary>
@@ -274,6 +359,7 @@ namespace JS
             // Clamp input
             Vector3 moveInputVector = Vector3.ClampMagnitude(new Vector3(inputs.Move.x, 0f, inputs.Move.y), 1f);
 
+            _cameraForwardDirection = inputs.CameraForward;
             // Calculate camera direction and rotation on the character plane
             Vector3 cameraPlanarDirection = Vector3.ProjectOnPlane(inputs.CameraRotation * Vector3.forward, Motor.CharacterUp).normalized;
             if (cameraPlanarDirection.sqrMagnitude == 0f)
@@ -281,6 +367,7 @@ namespace JS
                 cameraPlanarDirection = Vector3.ProjectOnPlane(inputs.CameraRotation * Vector3.up, Motor.CharacterUp).normalized;
             }
             Quaternion cameraPlanarRotation = Quaternion.LookRotation(cameraPlanarDirection, Motor.CharacterUp);
+            _cameraPlanarDirection = cameraPlanarDirection;
 
             switch (CurrentCharacterState)
             {
@@ -294,7 +381,6 @@ namespace JS
 
         Quaternion _tmpTransientRot;
         bool _dashRequested;
-        float _timeSinceDashRequested;
 
         /// <summary>
         /// (Called by KinematicCharacterMotor during its update cycle)
@@ -355,24 +441,48 @@ namespace JS
             _timeSinceJumpRequested += deltaTime;
             if (!_jumpRequested) return;
             if (!IsAllowedToJump()) return;
-            ActualPerformJump(ref currentVelocity);
+            ActualPerformJump(ref currentVelocity,deltaTime);
         }
 
-        void ActualPerformJump(ref Vector3 currentVelocity)
+        void ActualPerformJump(ref Vector3 currentVelocity,float deltatime)
+        {
+            Motor.ForceUnground();
+            currentVelocity.y = 0f;
+            var jumpIsInOppositeDirection = Vector3.Dot(_moveInputVector, currentVelocity.normalized) < 0;
+            if (jumpIsInOppositeDirection)
+            {
+                currentVelocity = -currentVelocity;
+                currentVelocity *= 0.5f;
+            }
+            currentVelocity += Motor.CharacterUp * JumpUpSpeed;
+
+            
+
+            _jumpRequested = false;
+            ConsumedJumps++;
+            _jumpConsumed = true;
+            _jumpedThisFrame = true;
+        }
+
+        void PerformOldJump(ref Vector3 currentVelocity)
         {
             // Calculate jump direction before ungrounding
             Vector3 jumpDirection = Motor.CharacterUp;
-            if (Motor.GroundingStatus.FoundAnyGround && !Motor.GroundingStatus.IsStableOnGround)
-            {
+            if (Motor.GroundingStatus is { FoundAnyGround: true, IsStableOnGround: false })
                 jumpDirection = Motor.GroundingStatus.GroundNormal;
-            }
 
-            // Makes the character skip ground probing/snapping on its next update. 
-            // If this line weren't here, the character would remain snapped to the ground when trying to jump. Try commenting this line out and see.
             Motor.ForceUnground();
 
+            var existingVelocity = Vector3.Project(currentVelocity, Motor.CharacterUp);
+            var jumpIsInOppositeDirection = Vector3.Dot(_moveInputVector, jumpDirection) < 0;
+            if (jumpIsInOppositeDirection)
+            {
+                currentVelocity = _moveInputVector * existingVelocity.magnitude;
+            }
+
+
             // Add to the return velocity and reset jump state
-            currentVelocity += (jumpDirection * JumpUpSpeed) - Vector3.Project(currentVelocity, Motor.CharacterUp);
+            currentVelocity += (jumpDirection * JumpUpSpeed) - existingVelocity;
             currentVelocity += (_moveInputVector * JumpScalableForwardSpeed);
             _jumpRequested = false;
             ConsumedJumps++;
@@ -387,7 +497,7 @@ namespace JS
             // Add move input
             if (_moveInputVector.sqrMagnitude > 0f)
             {
-                Vector3 addedVelocity = _moveInputVector * AirAccelerationSpeed * deltaTime;
+                Vector3 addedVelocity = _moveInputVector * (AirAccelerationSpeed * deltaTime);
 
                 Vector3 currentVelocityOnInputsPlane = Vector3.ProjectOnPlane(currentVelocity, Motor.CharacterUp);
 
@@ -445,7 +555,10 @@ namespace JS
             Vector3 inputRight = Vector3.Cross(_moveInputVector, Motor.CharacterUp);
             Vector3 reorientedInput =
                 Vector3.Cross(effectiveGroundNormal, inputRight).normalized * _moveInputVector.magnitude;
-            Vector3 targetMovementVelocity = reorientedInput * MaxStableMoveSpeed;
+            
+            var actualSpeed = _isSprinting ? SprintSpeed : MaxStableMoveSpeed;
+            
+            Vector3 targetMovementVelocity = reorientedInput * actualSpeed;
 
             // Smooth movement Velocity
             currentVelocity = Vector3.Lerp(currentVelocity, targetMovementVelocity,
@@ -587,6 +700,7 @@ namespace JS
     {
         public Vector2 Move;
         public Vector2 Look;
+        public Vector3 CameraPosition;
         public Quaternion CameraRotation;
         public bool JumpDown;
         public bool CrouchDown;
@@ -594,6 +708,9 @@ namespace JS
         public float CameraScroll;
         public bool ToggleCameraZoom;
         public bool DashDown;
+        public bool DropDown;
+        public bool SprintDown { get; set; }
+        public Vector3 CameraForward { get; set; }
     }
     
 

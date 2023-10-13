@@ -111,6 +111,9 @@ public class Inputs : MonoBehaviour
             JumpDown = p["Jump"].triggered,
             CrouchDown = p["Crouch"].WasPerformedThisFrame(),
             CrouchUp = p["Crouch"].WasReleasedThisFrame(),
+            DashDown = p["Dash"].triggered,
+            DropDown = p["Drop"].ReadValue<float>() > 0.5f,
+            SprintDown = p["Sprint"].ReadValue<float>() > 0.5f,
             ToggleCameraZoom = p["CameraZoom"].triggered,
             CameraScroll = p["CameraScroll"].ReadValue<float>()
         });
