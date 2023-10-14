@@ -1,16 +1,17 @@
 # 3D-Starter-Project
 
-
-
-https://github.com/jason-storey/3D-Starter-Project/assets/5407818/18bd1a02-9938-453a-aaad-9615d36f5f64
-
-
 ## What is it?
 Want to start prototyping some level designs? do some basic blockouts? 
 Don't want to deal with fiddly project setup? 
 
 This project is a basic starting environment that uses packages and free assets 
 on the unity asset store. 
+
+<img width="926" alt="Unity_U7QljjWJuk" src="https://github.com/jason-storey/3D-Starter-Project/assets/5407818/98d32074-7692-4780-9c66-ab245fb54719">
+
+### Example Video
+
+https://github.com/jason-storey/3D-Starter-Project/assets/5407818/18bd1a02-9938-453a-aaad-9615d36f5f64
 
 It has:
 
